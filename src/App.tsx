@@ -1,12 +1,15 @@
 /**
- * Root layout: dispatch strip, main map, driver column, V2I log, and controls.
- * All state comes from `useSimulation` (single source of truth).
+ * Root layout: dispatch strip, solution steps, main map + HUD, impact counter,
+ * V2I log, and controls. All state comes from `useSimulation` (single source
+ * of truth).
  */
 import { CityMap } from './components/CityMap';
 import { CommsLog } from './components/CommsLog';
 import { ControlBar } from './components/ControlBar';
 import { DispatchPanel } from './components/DispatchPanel';
 import { DriverHUD } from './components/DriverHUD';
+import { ImpactCounter } from './components/ImpactCounter';
+import { SolutionSteps } from './components/SolutionSteps';
 import { useSimulation } from './simulation/useSimulation';
 
 export default function App() {
@@ -18,11 +21,19 @@ export default function App() {
         greenCorridor={sim.greenCorridor}
         completed={sim.completed}
       />
+      <SolutionSteps step={sim.solutionStep} />
       <div className="main-panels">
         <div className="map-wrap">
-          <div className="map-caption">Live view · Ambulance + corridor</div>
+          <div className="map-caption">Live view · Ambulance + predictive corridor</div>
           <div className="map-overlay-corners" />
-          <CityMap lights={sim.lights} ambulance={sim.ambulance} headingRad={sim.ambulanceHeading} />
+          <CityMap
+            lights={sim.lights}
+            ambulance={sim.ambulance}
+            headingRad={sim.ambulanceHeading}
+            progress={sim.progress}
+            lookaheadDist={sim.lookaheadDist}
+            greenCorridor={sim.greenCorridor}
+          />
         </div>
         <DriverHUD
           scenario={sim.scenario}
@@ -33,6 +44,16 @@ export default function App() {
           completed={sim.completed}
         />
       </div>
+      <ImpactCounter
+        timeSavedSec={sim.timeSavedSec}
+        actualEtaSec={sim.actualEtaSec}
+        baselineEtaSec={sim.baselineEtaSec}
+        actualTotalSec={sim.actualTotalSec}
+        baselineTotalSec={sim.baselineTotalSec}
+        completed={sim.completed}
+        running={sim.running}
+        progress={sim.progress}
+      />
       <CommsLog items={sim.comms} />
       <ControlBar
         running={sim.running}

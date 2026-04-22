@@ -6,8 +6,12 @@
 import type { LightPhase, TrafficLightState } from '../types';
 import { getTotalRouteLength } from '../data/route';
 
-/** How far ahead of the unit (in path length units) we start negotiating. */
-const PREEMPT_LOOKAHEAD = 210;
+/**
+ * How far ahead of the unit (in path length units) we start negotiating.
+ * Tuned to keep ~3 corridor intersections pre-cleared in front of the ambulance,
+ * which is what slide 6 promises ("pre-clears a green wave of lights ahead").
+ */
+export const PREEMPT_LOOKAHEAD = 420;
 
 /**
  * How far past a stop line we go before the controller releases the junction.

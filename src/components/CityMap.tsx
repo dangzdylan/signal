@@ -4,7 +4,7 @@
  */
 import { Ambulance } from './Ambulance';
 import { TrafficLight } from './TrafficLight';
-import { ROUTE } from '../data/route';
+import { ROUTE, getLookaheadPath } from '../data/route';
 import { MAP_VIEW, STREET_SEGMENTS } from '../data/cityLayout';
 import type { TrafficLightState } from '../types';
 
@@ -13,12 +13,24 @@ type P = {
   lights: TrafficLightState[];
   ambulance: { x: number; y: number };
   headingRad: number;
+  /** 0..1 progress along the route; drives the predictive overlay. */
+  progress: number;
+  /** Preempt lookahead in route units; the glowing corridor extends this far. */
+  lookaheadDist: number;
+  /** Whether the corridor has actively taken at least one signal green. */
+  greenCorridor: boolean;
 };
 
 const vb = `0 0 ${MAP_VIEW.w} ${MAP_VIEW.h}`;
 
 export function CityMap(p: P) {
   const pts = ROUTE.waypoints.map((w) => `${w.x},${w.y}`).join(' ');
+  const lookaheadPts = p.progress < 1
+    ? getLookaheadPath(p.progress, p.lookaheadDist)
+        .map((w) => `${w.x},${w.y}`)
+        .join(' ')
+    : '';
+  const showLookahead = p.progress < 0.995 && lookaheadPts.length > 0;
 
   return (
     <svg
@@ -99,6 +111,34 @@ export function CityMap(p: P) {
         filter="url(#glow)"
         className="route-line"
       />
+
+      {showLookahead ? (
+        <g className="lookahead-group" aria-hidden>
+          {/* Soft outer glow — "corridor being pre-cleared" */}
+          <polyline
+            points={lookaheadPts}
+            fill="none"
+            stroke="rgba(80,255,150,0.28)"
+            strokeWidth={18}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            filter="url(#glow)"
+            className="lookahead-wide"
+          />
+          {/* Inner bright core */}
+          <polyline
+            points={lookaheadPts}
+            fill="none"
+            stroke="#4dff88"
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray="6 10"
+            className={`lookahead-core ${p.greenCorridor ? 'active' : ''}`}
+            opacity={0.95}
+          />
+        </g>
+      ) : null}
 
       {p.lights.map((L) => (
         <TrafficLight

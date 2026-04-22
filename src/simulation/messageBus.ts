@@ -4,8 +4,11 @@
  */
 import { FAKE_EPOCH, SCENARIO } from '../data/scenario';
 import * as T from '../data/messageTemplates';
-import type { CommsMessage } from '../types';
+import type { CommsMessage, CommsSource } from '../types';
 import type { LightSimEvent } from './trafficLightLogic';
+
+/** Matches CEN in messageTemplates; duplicated so we don't export an internal. */
+const CEN_LABEL = 'CTRL-7A';
 
 let msgCounter = 0;
 
@@ -25,20 +28,33 @@ function simToIsoOffset(simTimeMs: number): string {
 
 type Args = { lightId: string; rssi: number; eta: number; hold: number; simTimeMs: number };
 
-function toMessagesFromStart(
-  a: Args,
-  rowOffset: number,
-): { simTimeMs: number; line: string; kind: CommsMessage['kind'] }[] {
+type PartialRow = {
+  simTimeMs: number;
+  line: string;
+  kind: CommsMessage['kind'];
+  source: CommsSource;
+};
+
+function toMessagesFromStart(a: Args, rowOffset: number): PartialRow[] {
   const simIso = simToIsoOffset(a.simTimeMs + rowOffset);
   const rssi = a.rssi;
   const base = { lightId: a.lightId, rssi, etaSec: a.eta, holdSec: a.hold, simIso };
   return [
-    { simTimeMs: a.simTimeMs, line: T.v2iRequest(base), kind: 'v2i' as const },
-    { simTimeMs: a.simTimeMs + 2, line: T.v2iAck({ ...base, simIso: simToIsoOffset(a.simTimeMs + rowOffset + 8) }), kind: 'ack' as const },
+    // Vehicle-originated preempt request ⇒ attributed to the AVL Provider feed.
+    { simTimeMs: a.simTimeMs, line: T.v2iRequest(base), kind: 'v2i', source: 'AVL' },
+    // Controller ACK ⇒ Public Works Department owns the signal controllers.
+    {
+      simTimeMs: a.simTimeMs + 2,
+      line: T.v2iAck({ ...base, simIso: simToIsoOffset(a.simTimeMs + rowOffset + 8) }),
+      kind: 'ack',
+      source: 'PWD',
+    },
+    // Central grant ⇒ East Bay Regional Comms System coordinates the corridor.
     {
       simTimeMs: a.simTimeMs + 4,
       line: T.v2iGrantFromCentral({ ...base, simIso: simToIsoOffset(a.simTimeMs + rowOffset + 15) }),
-      kind: 'dispatch' as const,
+      kind: 'dispatch',
+      source: 'EBRICS',
     },
   ];
 }
@@ -67,15 +83,13 @@ export function comsFromEvent(
       { lightId: ev.lightId, rssi, eta, hold, simTimeMs },
       0,
     );
-    return parts.map(
-      (p) =>
-        ({
-          id: nextId(),
-          simTimeMs: p.simTimeMs,
-          line: p.line,
-          kind: p.kind,
-        }) as CommsMessage,
-    );
+    return parts.map((p) => ({
+      id: nextId(),
+      simTimeMs: p.simTimeMs,
+      line: p.line,
+      kind: p.kind,
+      source: p.source,
+    }));
   }
   if (ev.type === 'preempt_end') {
     const sid = sessionMap[ev.lightId] ?? `TSP-${ev.lightId}-END`;
@@ -86,12 +100,14 @@ export function comsFromEvent(
         simTimeMs,
         line: T.v2iReleaseFromCentral({ lightId: ev.lightId, simIso: t, sessionId: sid }),
         kind: 'dispatch' as const,
+        source: 'EBRICS',
       },
       {
         id: nextId(),
         simTimeMs: simTimeMs + 1,
         line: T.v2iReleaseFromLight({ lightId: ev.lightId, simIso: simToIsoOffset(simTimeMs + 1), sessionId: sid }),
         kind: 'v2i' as const,
+        source: 'PWD',
       },
     ];
   }
@@ -111,6 +127,7 @@ export function makeGreenWaveNotice(simTimeMs: number, active: true): CommsMessa
     simTimeMs,
     line: T.systemGreenWave(simToIsoOffset(simTimeMs), active),
     kind: 'sys' as const,
+    source: 'EBRICS',
   };
 }
 
@@ -121,5 +138,18 @@ export function makeBootMessage(): CommsMessage {
     simTimeMs: 0,
     line: `[BOOT] V2I radio=${SCENARIO.regionCode} link=SEC-TLS-1.3 unit=${SCENARIO.unitId} scenario=hospital_transfer_demo`,
     kind: 'sys' as const,
+    source: 'ITSS',
+  };
+}
+
+/** Synthetic AVL handshake shown right after Start to fill the "route predicted" step. */
+export function makeRoutePredictedMessage(simTimeMs: number): CommsMessage {
+  const iso = simToIsoOffset(simTimeMs);
+  return {
+    id: nextId(),
+    simTimeMs,
+    line: `[${iso}] AVL → ${CEN_LABEL}: ROUTE_SOLVED unit=${SCENARIO.unitId} legs=3 corridor=METRO-7A eta_v2i=88s eta_baseline=175s`,
+    kind: 'dispatch' as const,
+    source: 'AVL',
   };
 }

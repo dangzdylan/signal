@@ -74,6 +74,16 @@ export type ScenarioInfo = {
   regionCode: string;
 };
 
+/**
+ * Originating department / external system for a comms line. Mirrors the
+ * partner stack called out in slides 9 & 17:
+ *   AVL    — AVL Provider (vehicle location telemetry)
+ *   PWD    — Public Works Department (owns signal controllers)
+ *   EBRICS — East Bay Regional Comms System (central dispatch / coordination)
+ *   ITSS   — IT Systems / integration + boot messages
+ */
+export type CommsSource = 'AVL' | 'PWD' | 'EBRICS' | 'ITSS';
+
 /** One row in the bottom comms / V2I log. */
 export type CommsMessage = {
   id: string;
@@ -82,4 +92,16 @@ export type CommsMessage = {
   line: string;
   /** Slight color coding in the terminal. */
   kind: 'v2i' | 'ack' | 'sys' | 'dispatch';
+  /** Which department / external system emitted this message. */
+  source: CommsSource;
 };
+
+/**
+ * High-level phase of the end-to-end V2I flow, matching slide 8 ("Solution Steps").
+ *   dispatch  — 911 call received, unit not yet dispatched
+ *   predicted — AVL + central project the ambulance route
+ *   corridor  — first signals preempted; green wave is forming
+ *   enroute   — ambulance traveling under sustained preemption
+ *   arrived   — unit at hospital bay; corridor released
+ */
+export type SolutionStep = 'dispatch' | 'predicted' | 'corridor' | 'enroute' | 'arrived';

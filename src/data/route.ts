@@ -109,6 +109,38 @@ export function getTotalRouteLength(): number {
 }
 
 /**
+ * Build the polyline from the ambulance's current position extending
+ * `aheadDist` units along the route. Used by CityMap to draw the
+ * predictive "green wave" corridor that slide 6 describes.
+ *
+ * Returns 2+ points: [current position, ...intermediate waypoints, endpoint].
+ * If we are already at the end, returns a single point.
+ */
+export function getLookaheadPath(progress: number, aheadDist: number): Point2[] {
+  const p = Math.max(0, Math.min(1, progress));
+  const startDist = p * TOTAL_LENGTH;
+  const endDist = Math.min(TOTAL_LENGTH, startDist + Math.max(0, aheadDist));
+
+  const startSample = sampleRoute(p);
+  const out: Point2[] = [{ x: startSample.point.x, y: startSample.point.y }];
+
+  // Intermediate corridor waypoints that fall strictly inside (startDist, endDist).
+  for (let i = 1; i < WAYPOINTS.length - 1; i += 1) {
+    const wpDist = CUMULATIVE[i]!;
+    if (wpDist > startDist + 0.01 && wpDist < endDist - 0.01) {
+      out.push({ ...WAYPOINTS[i]! });
+    }
+  }
+
+  if (endDist > startDist + 0.5) {
+    const endSample = sampleRoute(endDist / TOTAL_LENGTH);
+    out.push({ x: endSample.point.x, y: endSample.point.y });
+  }
+
+  return out;
+}
+
+/**
  * Returns (distance to next full stop / major maneuver, label).
  * Simplified: we use segment boundaries for "turn" text.
  */
