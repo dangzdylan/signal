@@ -1,0 +1,47 @@
+/**
+ * Root layout: dispatch strip, main map, driver column, V2I log, and controls.
+ * All state comes from `useSimulation` (single source of truth).
+ */
+import { CityMap } from './components/CityMap';
+import { CommsLog } from './components/CommsLog';
+import { ControlBar } from './components/ControlBar';
+import { DispatchPanel } from './components/DispatchPanel';
+import { DriverHUD } from './components/DriverHUD';
+import { useSimulation } from './simulation/useSimulation';
+
+export default function App() {
+  const sim = useSimulation();
+  return (
+    <div className="app-shell">
+      <DispatchPanel
+        scenario={sim.scenario}
+        greenCorridor={sim.greenCorridor}
+        completed={sim.completed}
+      />
+      <div className="main-panels">
+        <div className="map-wrap">
+          <div className="map-caption">Live view · Ambulance + corridor</div>
+          <div className="map-overlay-corners" />
+          <CityMap lights={sim.lights} ambulance={sim.ambulance} headingRad={sim.ambulanceHeading} />
+        </div>
+        <DriverHUD
+          scenario={sim.scenario}
+          speedKmh={sim.speedKmh}
+          etaSec={sim.etaSec}
+          nextManeuver={sim.nextManeuver}
+          greenCorridor={sim.greenCorridor}
+          completed={sim.completed}
+        />
+      </div>
+      <CommsLog items={sim.comms} />
+      <ControlBar
+        running={sim.running}
+        onStart={sim.start}
+        onPause={sim.pause}
+        onReset={sim.reset}
+        playSpeed={sim.playSpeed}
+        onSpeed={sim.setPlaySpeed}
+      />
+    </div>
+  );
+}
