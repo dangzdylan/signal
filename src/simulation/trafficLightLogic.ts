@@ -7,17 +7,32 @@ import type { LightPhase, TrafficLightState } from '../types';
 import { getTotalRouteLength } from '../data/route';
 
 /**
- * How far ahead of the unit (in path length units) we start negotiating.
- * Tuned to keep ~3 corridor intersections pre-cleared in front of the ambulance,
- * which is what slide 6 promises ("pre-clears a green wave of lights ahead").
+ * How far ahead of the unit (meters) we start negotiating priority.
+ * Tuned for Shattuck Ave signal spacing (~150–200 m): keeps ~3 corridor
+ * intersections pre-cleared in front of the ambulance, matching slide 6's
+ * "pre-clears a green wave of lights ahead."
  */
-export const PREEMPT_LOOKAHEAD = 420;
+export const PREEMPT_LOOKAHEAD = 600;
 
 /**
- * How far past a stop line we go before the controller releases the junction.
- * (Still on the same abstract unit scale as the route polyline.)
+ * How far past a stop line (meters) we travel before the controller releases
+ * the junction back to normal cycling.
  */
-const POST_PASS_BUFFER = 35;
+const POST_PASS_BUFFER = 40;
+
+/**
+ * After a request is acknowledged, real signal controllers must finish the
+ * cross street's minimum green / yellow / red-clearance before they can give
+ * green to the corridor. We model that as an "arming" phase: each light
+ * shows yellow for this many ms, then flips green.
+ *
+ * The delay scales with how far ahead the light is — closest lights arm
+ * fastest (more urgent), farther lights take longer. This produces the
+ * cascading "wave of yellows turning green" you'd see down a real corridor
+ * instead of every signal snapping to green at the same instant.
+ */
+const ARMING_MIN_MS = 800;
+const ARMING_MAX_MS = 2600;
 
 const CYCLE_MS = 9000;
 const RED_END = 4000;
@@ -94,14 +109,31 @@ export function advanceTrafficLights(
       return { ...L, phase: 'green' as const };
     }
 
+    if (L.mode === 'arming') {
+      // Arming complete → flip to solid green and lock the corridor.
+      if (L.preemptReleaseAt !== null && simTimeMs >= L.preemptReleaseAt) {
+        return {
+          ...L,
+          mode: 'preempt' as const,
+          phase: 'green' as const,
+          preemptReleaseAt: null,
+        };
+      }
+      // Mid-transition: hold the cross street's yellow clearance.
+      return { ...L, phase: 'yellow' as const };
+    }
+
     // Not yet in preempt: check whether we are inside the window to request.
     if (ahead > 0 && ahead < PREEMPT_LOOKAHEAD) {
       events.push({ type: 'preempt_start', lightId: L.id, distanceAhead: ahead });
+      // Closer lights arm faster (more urgent); farther lights take longer.
+      const t = Math.min(1, Math.max(0, ahead / PREEMPT_LOOKAHEAD));
+      const armingMs = ARMING_MIN_MS + t * (ARMING_MAX_MS - ARMING_MIN_MS);
       return {
         ...L,
-        mode: 'preempt' as const,
-        phase: 'green' as const,
-        preemptReleaseAt: null,
+        mode: 'arming' as const,
+        phase: 'yellow' as const,
+        preemptReleaseAt: simTimeMs + armingMs,
       };
     }
 

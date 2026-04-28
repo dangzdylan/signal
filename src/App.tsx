@@ -3,12 +3,12 @@
  * V2I log, and controls. All state comes from `useSimulation` (single source
  * of truth).
  */
-import { CityMap } from './components/CityMap';
 import { CommsLog } from './components/CommsLog';
 import { ControlBar } from './components/ControlBar';
 import { DispatchPanel } from './components/DispatchPanel';
 import { DriverHUD } from './components/DriverHUD';
 import { ImpactCounter } from './components/ImpactCounter';
+import { MapShell } from './components/MapShell';
 import { SolutionSteps } from './components/SolutionSteps';
 import { useSimulation } from './simulation/useSimulation';
 
@@ -24,9 +24,9 @@ export default function App() {
       <SolutionSteps step={sim.solutionStep} />
       <div className="main-panels">
         <div className="map-wrap">
-          <div className="map-caption">Live view · Ambulance + predictive corridor</div>
+          <div className="map-caption">Live view · Ambulance + predictive corridor · Berkeley</div>
           <div className="map-overlay-corners" />
-          <CityMap
+          <MapShell
             lights={sim.lights}
             ambulance={sim.ambulance}
             headingRad={sim.ambulanceHeading}

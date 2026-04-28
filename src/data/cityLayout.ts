@@ -1,80 +1,81 @@
 /**
- * Stylized neon city: street segments for the SVG and traffic light locations.
- * Coordinates are arbitrary but consistent with the route in `route.ts`.
+ * Berkeley intersection layout: corridor traffic lights along Shattuck/Ashby
+ * (the active V2I corridor) plus a few decorative off-corridor lights on
+ * parallel streets to make the surrounding city feel alive.
+ *
+ * All coordinates are real-world OSM `traffic_signals` node positions
+ * (Point2: x = lng, y = lat). Cycle offsets are spread across the full
+ * 9-second free cycle so the city shows a realistic mix of red/yellow/green
+ * before any V2I priority is requested.
  */
-import type { StreetSegment, TrafficLightState, LightPhase } from '../types';
-import { ROUTE } from './route';
-
-const W = 880;
-const H = 480;
+import type { LightPhase, TrafficLightState } from '../types';
+import { ROUTE, getCumulativeAt } from './route';
 
 /**
- * A sparse grid: horizontal and vertical "arteries" the brain reads as a city.
- * We draw these below the active route, so the red ambulance path still pops.
+ * Map view defaults consumed by the Leaflet container.
+ * Center is roughly mid-corridor on Shattuck near Bancroft so the entire
+ * route fits at default zoom.
  */
-function buildStreets(): StreetSegment[] {
-  const hYs = [100, 200, 300, 400];
-  const vXs = [100, 200, 300, 400, 500, 600, 700, 800];
-  const segs: StreetSegment[] = [];
-  let n = 0;
-  hYs.forEach((y) => {
-    n += 1;
-    segs.push({ from: { x: 40, y }, to: { x: W, y }, id: `h${n}` });
-  });
-  vXs.forEach((x) => {
-    n += 1;
-    segs.push({ from: { x, y: 40 }, to: { x, y: H + 20 }, id: `v${n}` });
-  });
-  return segs;
-}
+export const MAP_VIEW = {
+  center: [37.8640, -122.2660] as [number, number],
+  zoom: 15,
+  bounds: [
+    [37.8540, -122.2740],
+    [37.8740, -122.2530],
+  ] as [[number, number], [number, number]],
+};
 
-export const STREET_SEGMENTS: StreetSegment[] = buildStreets();
+/** Free-cycle phase math (mirrors trafficLightLogic.phaseFromFreeCycle). */
+const CYCLE_MS = 9000;
+const RED_END = 4000;
+const YELLOW_END = 5500;
 
-/** Canvas size the map is designed for. */
-export const MAP_VIEW = { w: 920, h: 520, pad: 20 };
-
-const PHASES: LightPhase[] = ['red', 'yellow', 'green', 'red', 'green', 'red', 'yellow'];
-
-/**
- * Cumulative path distance to each route waypoint, aligned with `ROUTE.waypoints`.
- * Must match the segment-by-segment sum in `route.ts`.
- */
-function cumulativeDistToWaypointIndex(index: number): number {
-  const w = ROUTE.waypoints;
-  let s = 0;
-  for (let j = 0; j < index; j += 1) {
-    const a = w[j]!;
-    const b = w[j + 1]!;
-    s += Math.hypot(b.x - a.x, b.y - a.y);
-  }
-  return s;
+function phaseAt(timeMs: number, offset: number): LightPhase {
+  const c = (timeMs + offset) % CYCLE_MS;
+  if (c < RED_END) return 'red';
+  if (c < YELLOW_END) return 'yellow';
+  return 'green';
 }
 
 /**
- * Build initial traffic light states: corridor (V2I target) + background (visual only).
+ * Build initial traffic light states: corridor (V2I target) + background
+ * (visual only). Corridor lights skip the route's start/end waypoints
+ * (fire-station driveway, hospital ER bay) which are not real signals.
  */
 function buildInitialLights(): TrafficLightState[] {
   const wps = ROUTE.waypoints;
-  const corridor: TrafficLightState[] = wps.map((p, i) => ({
-    id: `TL-${String(i + 1).padStart(2, '0')}`,
-    x: p.x,
-    y: p.y,
-    distanceAlongPath: cumulativeDistToWaypointIndex(i),
-    phase: PHASES[i % PHASES.length]!,
-    mode: 'normal' as const,
-    preemptReleaseAt: null,
-    // Stagger the free-run cycle in ms so the city does not "blink" in unison.
-    cycleTimeOffset: 800 * i,
-    onCorridor: true,
-  }));
+  const corridor: TrafficLightState[] = wps.slice(1, -1).map((p, k) => {
+    const i = k + 1; // waypoint index in ROUTE
+    // Spread offsets across the full cycle so initial colors look like a
+    // real intersection grid rather than a synthetic stagger.
+    const offset = (k * 1600) % CYCLE_MS;
+    return {
+      id: `TL-${String(i).padStart(2, '0')}`,
+      x: p.x,
+      y: p.y,
+      distanceAlongPath: getCumulativeAt(i),
+      phase: phaseAt(0, offset),
+      mode: 'normal' as const,
+      preemptReleaseAt: null,
+      cycleTimeOffset: offset,
+      onCorridor: true,
+    };
+  });
 
-  // Decorative: small intersections that never get REQ_PRIORITY in the log.
+  // Decorative: signalized Berkeley intersections on parallel streets, off
+  // the active corridor. Coordinates are real OSM signal nodes so they sit
+  // exactly on the road geometry.
   const bg: Omit<TrafficLightState, 'id'>[] = [
-    { x: 200, y: 200, distanceAlongPath: -1, phase: 'green', mode: 'normal', preemptReleaseAt: null, cycleTimeOffset: 200, onCorridor: false },
-    { x: 400, y: 200, distanceAlongPath: -1, phase: 'red', mode: 'normal', preemptReleaseAt: null, cycleTimeOffset: 500, onCorridor: false },
-    { x: 600, y: 200, distanceAlongPath: -1, phase: 'yellow', mode: 'normal', preemptReleaseAt: null, cycleTimeOffset: 120, onCorridor: false },
-    { x: 200, y: 300, distanceAlongPath: -1, phase: 'red', mode: 'normal', preemptReleaseAt: null, cycleTimeOffset: 900, onCorridor: false },
-    { x: 500, y: 400, distanceAlongPath: -1, phase: 'green', mode: 'normal', preemptReleaseAt: null, cycleTimeOffset: 400, onCorridor: false },
+    // University Ave & Milvia St (one block west of Shattuck)
+    { x: -122.2730, y: 37.8716, distanceAlongPath: -1, phase: phaseAt(0, 700), mode: 'normal', preemptReleaseAt: null, cycleTimeOffset: 700, onCorridor: false },
+    // Bancroft Way & Milvia St
+    { x: -122.2727, y: 37.8688, distanceAlongPath: -1, phase: phaseAt(0, 5200), mode: 'normal', preemptReleaseAt: null, cycleTimeOffset: 5200, onCorridor: false },
+    // Bancroft Way & Telegraph Ave (east side of campus)
+    { x: -122.2592, y: 37.8687, distanceAlongPath: -1, phase: phaseAt(0, 2900), mode: 'normal', preemptReleaseAt: null, cycleTimeOffset: 2900, onCorridor: false },
+    // Dwight Way & Telegraph Ave
+    { x: -122.2586, y: 37.8642, distanceAlongPath: -1, phase: phaseAt(0, 7400), mode: 'normal', preemptReleaseAt: null, cycleTimeOffset: 7400, onCorridor: false },
+    // Ashby Ave & Martin Luther King Jr Way (west of corridor end)
+    { x: -122.2692, y: 37.8549, distanceAlongPath: -1, phase: phaseAt(0, 4100), mode: 'normal', preemptReleaseAt: null, cycleTimeOffset: 4100, onCorridor: false },
   ];
   const bgWithIds: TrafficLightState[] = bg.map((b, k) => ({
     ...b,
@@ -85,7 +86,7 @@ function buildInitialLights(): TrafficLightState[] {
 }
 
 /**
- * One-time seed for the engine; a fresh copy is cloned in `useSimulation` on reset
- * so the user can replay the same choreography.
+ * One-time seed for the engine; a fresh copy is cloned in `useSimulation` on
+ * reset so the user can replay the same choreography.
  */
 export const INITIAL_TRAFFIC_LIGHTS: TrafficLightState[] = buildInitialLights();

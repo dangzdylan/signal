@@ -116,9 +116,12 @@ export function useSimulation(): UseSimulationReturn {
 
   const wobble = 4 * Math.sin(simTimeMs / 4200);
   const speedKmh = running || progress > 0 ? Math.min(64, Math.max(32, BASE_CRUISE_KMH + wobble)) : 0;
-  const { nextManeuver, distanceAlongRemaining } = getNextManeuver(progress);
+  const { nextManeuver } = getNextManeuver(progress);
+  // ETA reflects scenario pacing (V2I run finishes in SCENARIO_DURATION_SEC at 1x).
   const etaSec =
-    progress < 0.99 ? Math.max(0, (distanceAlongRemaining / 120) * 45 * (1 / playSpeed)) : 0;
+    progress < 0.99
+      ? Math.max(0, (1 - progress) * SCENARIO_DURATION_SEC * (1 / playSpeed))
+      : 0;
   const greenCorridor = lights.some((L) => L.mode === 'preempt' && L.onCorridor);
   const sample = sampleRoute(progress);
 

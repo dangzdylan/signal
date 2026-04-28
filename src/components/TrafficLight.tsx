@@ -30,12 +30,26 @@ export function TrafficLight(p: P) {
   const c = (k: 0 | 1 | 2) =>
     ({ x: p.x, y: p.y + (k - 1) * step } as const);
   const isPre = p.mode === 'preempt' && p.onCorridor;
+  const isArming = p.mode === 'arming' && p.onCorridor;
   const dim = p.onCorridor ? 1 : 0.55;
   // Red on top, yellow center, green bottom (N.A. style layout).
   const onIdx = p.phase === 'red' ? 0 : p.phase === 'yellow' ? 1 : 2;
 
   return (
     <g>
+      {isArming ? (
+        <circle
+          cx={p.x}
+          cy={p.y}
+          r={r + 12 * s}
+          fill="none"
+          stroke="rgba(255, 190, 70, 0.85)"
+          strokeWidth={2 * s}
+          strokeDasharray="3 3"
+          className="tsp-arming"
+          opacity={0.85}
+        />
+      ) : null}
       {isPre ? (
         <circle
           cx={p.x}

@@ -3,7 +3,11 @@
  * Everything is in-memory: no network, no database.
  */
 
-/** Single point in our stylized 2D city (SVG / simulation space). */
+/**
+ * Single 2D point used by the simulation. Encoded as `x = longitude`,
+ * `y = latitude` (real-world WGS84). Distances between Point2 values are
+ * computed in meters via Haversine in `data/route.ts`.
+ */
 export type Point2 = { x: number; y: number };
 
 /**
@@ -23,10 +27,13 @@ export type RouteDefinition = {
 export type LightPhase = 'red' | 'yellow' | 'green';
 
 /**
- * - normal: the light cycles on a fixed timer.
- * - preempt: V2I has granted priority; hold green for the ambulance.
+ * - normal:  the light cycles on a fixed timer.
+ * - arming:  controller has acknowledged the V2I request and is transitioning
+ *            the cross street through its yellow/red clearance before granting
+ *            green to the corridor. Visible as yellow + amber halo.
+ * - preempt: V2I priority is fully granted; solid green for the ambulance.
  */
-export type LightMode = 'normal' | 'preempt';
+export type LightMode = 'normal' | 'arming' | 'preempt';
 
 /**
  * One traffic light in the city. `distanceAlongPath` is where the ambulance
@@ -56,12 +63,6 @@ export type TrafficLightState = {
    */
   cycleTimeOffset: number;
 };
-
-/**
- * A line segment for drawing streets (and optionally lane centers).
- * Stored as two endpoints; stroke width and glow are CSS on the line.
- */
-export type StreetSegment = { from: Point2; to: Point2; id: string };
 
 /** Hardcoded 911 + hospital metadata shown in the dispatch strip. */
 export type ScenarioInfo = {

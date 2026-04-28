@@ -75,8 +75,8 @@ export function comsFromEvent(
     if (!sessionMap[ev.lightId]) {
       sessionMap[ev.lightId] = `TSP-${ev.lightId}-${Math.floor(1000 + Math.random() * 8999)}`;
     }
-    // Toy mapping: "distance" units to estimated seconds (purely for display).
-    const eta = Math.max(0.1, (distanceAhead / 60) * 1.1);
+    // distanceAhead is in meters; 22 m/s ≈ 80 km/h gives a plausible ETA.
+    const eta = Math.max(0.1, (distanceAhead / 22) * 1.1);
     const rssi = -64 - (distanceAhead / 20) * 0.1;
     const hold = 18 + (distanceAhead / 200) * 0.2;
     const parts = toMessagesFromStart(
