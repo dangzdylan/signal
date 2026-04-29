@@ -8,7 +8,7 @@
  * we project those into container pixels via `map.latLngToContainerPoint`
  * so the existing SVG-based rendering and animations carry over unchanged.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import { Ambulance } from './Ambulance';
 import { TrafficLight } from './TrafficLight';
@@ -66,6 +66,8 @@ type P = {
   showAmbulance?: boolean;
   /** Suppress all SVG overlay content — map tiles still show (incoming-call phase). */
   hideOverlay?: boolean;
+  /** Whether the map is in full-screen expanded mode; triggers invalidateSize. */
+  expanded?: boolean;
 };
 
 export function MapShell(p: P) {
@@ -118,12 +120,12 @@ export function MapShell(p: P) {
         subdomains="abcd"
         maxZoom={19}
       />
-      <SvgOverlay {...p} streetlights={streetlights} hideOverlay={p.hideOverlay} />
+      <SvgOverlay {...p} streetlights={streetlights} hideOverlay={p.hideOverlay} expanded={p.expanded} />
     </MapContainer>
   );
 }
 
-type OverlayP = P & { streetlights: Streetlight[]; hideOverlay?: boolean };
+type OverlayP = P & { streetlights: Streetlight[]; hideOverlay?: boolean; expanded?: boolean };
 
 /**
  * Inner component that has access to the Leaflet map via `useMap()`. It
@@ -138,6 +140,13 @@ function SvgOverlay(p: OverlayP) {
     zoomend: () => setTick((t) => t + 1),
     resize: () => setTick((t) => t + 1),
   });
+
+  // When the map container changes size (expand/collapse), tell Leaflet so it
+  // re-renders tiles to fill the new viewport. useLayoutEffect fires after the
+  // DOM update so the container already has its new dimensions.
+  useLayoutEffect(() => {
+    map.invalidateSize({ animate: false });
+  }, [map, p.expanded]);
 
   const size = map.getSize();
 
