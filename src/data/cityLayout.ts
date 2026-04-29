@@ -1,12 +1,8 @@
 /**
  * Berkeley intersection layout: corridor traffic lights along Shattuck/Ashby
- * (the active V2I corridor) plus a few decorative off-corridor lights on
- * parallel streets to make the surrounding city feel alive.
- *
- * All coordinates are real-world OSM `traffic_signals` node positions
- * (Point2: x = lng, y = lat). Cycle offsets are spread across the full
- * 9-second free cycle so the city shows a realistic mix of red/yellow/green
- * before any V2I priority is requested.
+ * (the active V2I corridor). Coordinates are real-world OSM `traffic_signals`
+ * node positions (Point2: x = lng, y = lat). Background city streetlights are
+ * fetched live from the City of Berkeley dataset (dz4s-un9u) in MapShell.
  */
 import type { LightPhase, TrafficLightState } from '../types';
 import { ROUTE, getCumulativeAt } from './route';
@@ -62,27 +58,7 @@ function buildInitialLights(): TrafficLightState[] {
     };
   });
 
-  // Decorative: signalized Berkeley intersections on parallel streets, off
-  // the active corridor. Coordinates are real OSM signal nodes so they sit
-  // exactly on the road geometry.
-  const bg: Omit<TrafficLightState, 'id'>[] = [
-    // University Ave & Milvia St (one block west of Shattuck)
-    { x: -122.2730, y: 37.8716, distanceAlongPath: -1, phase: phaseAt(0, 700), mode: 'normal', preemptReleaseAt: null, cycleTimeOffset: 700, onCorridor: false },
-    // Bancroft Way & Milvia St
-    { x: -122.2727, y: 37.8688, distanceAlongPath: -1, phase: phaseAt(0, 5200), mode: 'normal', preemptReleaseAt: null, cycleTimeOffset: 5200, onCorridor: false },
-    // Bancroft Way & Telegraph Ave (east side of campus)
-    { x: -122.2592, y: 37.8687, distanceAlongPath: -1, phase: phaseAt(0, 2900), mode: 'normal', preemptReleaseAt: null, cycleTimeOffset: 2900, onCorridor: false },
-    // Dwight Way & Telegraph Ave
-    { x: -122.2586, y: 37.8642, distanceAlongPath: -1, phase: phaseAt(0, 7400), mode: 'normal', preemptReleaseAt: null, cycleTimeOffset: 7400, onCorridor: false },
-    // Ashby Ave & Martin Luther King Jr Way (west of corridor end)
-    { x: -122.2692, y: 37.8549, distanceAlongPath: -1, phase: phaseAt(0, 4100), mode: 'normal', preemptReleaseAt: null, cycleTimeOffset: 4100, onCorridor: false },
-  ];
-  const bgWithIds: TrafficLightState[] = bg.map((b, k) => ({
-    ...b,
-    id: `TL-B${k + 1}`,
-  }));
-
-  return [...corridor, ...bgWithIds];
+  return corridor;
 }
 
 /**

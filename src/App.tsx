@@ -33,6 +33,7 @@ export default function App() {
             progress={sim.progress}
             lookaheadDist={sim.lookaheadDist}
             greenCorridor={sim.greenCorridor}
+            cityTimeMs={sim.cityTimeMs}
           />
         </div>
         <DriverHUD

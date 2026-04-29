@@ -1,17 +1,14 @@
 /**
  * Real Berkeley map for the V2I demo: a react-leaflet MapContainer with
- * CartoDB Dark Matter tiles, plus an absolutely-positioned SVG overlay that
- * holds the ambulance, traffic-light placeholders, route polyline, and
- * predictive corridor.
+ * CartoDB Positron tiles, plus an absolutely-positioned SVG overlay that
+ * holds the ambulance, traffic-light placeholders, route polyline, predictive
+ * corridor, and live Berkeley streetlights fetched from the City dataset.
  *
  * The simulation works in lat/lng (Point2: x = lng, y = lat). Every render
  * we project those into container pixels via `map.latLngToContainerPoint`
  * so the existing SVG-based rendering and animations carry over unchanged.
- *
- * Zoom animation is disabled so each zoom step snaps and the overlay stays
- * locked to the underlying map without mid-animation drift.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import { Ambulance } from './Ambulance';
 import { TrafficLight } from './TrafficLight';
@@ -19,8 +16,41 @@ import { ROUTE, getLookaheadPath } from '../data/route';
 import { MAP_VIEW } from '../data/cityLayout';
 import type { TrafficLightState } from '../types';
 
+/** A single streetlight record from the City of Berkeley dataset (dz4s-un9u). */
+type Streetlight = {
+  id: string;
+  lat: number;
+  lng: number;
+  /** Deterministic cycle offset derived from the facility ID. */
+  offset: number;
+};
+
+/** Simple hash → spread offsets across the 9-second cycle. */
+function hashOffset(id: string): number {
+  let h = 0;
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) & 0x7fffffff;
+  return h % 9000;
+}
+
+const CYCLE_MS = 9000;
+const RED_END = 4000;
+const YELLOW_END = 5500;
+
+function streetlightPhase(cityTimeMs: number, offset: number): 'red' | 'yellow' | 'green' {
+  const c = (cityTimeMs + offset) % CYCLE_MS;
+  if (c < RED_END) return 'red';
+  if (c < YELLOW_END) return 'yellow';
+  return 'green';
+}
+
+const PHASE_FILL: Record<'red' | 'yellow' | 'green', string> = {
+  red: '#e53e3e',
+  yellow: '#d97706',
+  green: '#16a34a',
+};
+
 type P = {
-  /** Live states from the simulation (includes decorative lights). */
+  /** Live states from the simulation (corridor lights). */
   lights: TrafficLightState[];
   ambulance: { x: number; y: number };
   headingRad: number;
@@ -30,9 +60,41 @@ type P = {
   lookaheadDist: number;
   /** Whether the corridor has actively taken at least one signal green. */
   greenCorridor: boolean;
+  /** Always-running wall-clock ms — drives background light cycling. */
+  cityTimeMs: number;
 };
 
 export function MapShell(p: P) {
+  const [streetlights, setStreetlights] = useState<Streetlight[]>([]);
+
+  useEffect(() => {
+    const bounds = MAP_VIEW.bounds;
+    const [sw, ne] = bounds;
+    const url =
+      `https://data.cityofberkeley.info/resource/dz4s-un9u.json` +
+      `?$limit=500` +
+      `&$select=facilityid,latitude,longitude` +
+      `&$where=latitude>${sw[0]} AND latitude<${ne[0]} AND longitude>${sw[1]} AND longitude<${ne[1]}`;
+
+    fetch(url)
+      .then((r) => r.json())
+      .then((rows: { facilityid: string; latitude: string; longitude: string }[]) => {
+        setStreetlights(
+          rows
+            .filter((r) => r.latitude && r.longitude)
+            .map((r) => ({
+              id: r.facilityid,
+              lat: parseFloat(r.latitude),
+              lng: parseFloat(r.longitude),
+              offset: hashOffset(r.facilityid),
+            })),
+        );
+      })
+      .catch(() => {
+        // Silently degrade — demo works without the extra lights.
+      });
+  }, []);
+
   return (
     <MapContainer
       className="city-map"
@@ -47,22 +109,24 @@ export function MapShell(p: P) {
       zoomControl
     >
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         subdomains="abcd"
         maxZoom={19}
       />
-      <SvgOverlay {...p} />
+      <SvgOverlay {...p} streetlights={streetlights} />
     </MapContainer>
   );
 }
+
+type OverlayP = P & { streetlights: Streetlight[] };
 
 /**
  * Inner component that has access to the Leaflet map via `useMap()`. It
  * re-renders on every map move/zoom event, projecting all simulation lat/lng
  * points into container pixel coordinates.
  */
-function SvgOverlay(p: P) {
+function SvgOverlay(p: OverlayP) {
   const map = useMap();
   const [, setTick] = useState(0);
   useMapEvents({
@@ -134,10 +198,28 @@ function SvgOverlay(p: P) {
         </radialGradient>
       </defs>
 
+      {/* Berkeley streetlights — fetched live from City dataset dz4s-un9u */}
+      <g aria-hidden>
+        {p.streetlights.map((sl) => {
+          const pt = project(sl.lng, sl.lat);
+          const phase = streetlightPhase(p.cityTimeMs, sl.offset);
+          return (
+            <circle
+              key={sl.id}
+              cx={pt.x}
+              cy={pt.y}
+              r={3}
+              fill={PHASE_FILL[phase]}
+              opacity={0.55}
+            />
+          );
+        })}
+      </g>
+
       <polyline
         points={routeStr}
         fill="none"
-        stroke="rgba(40,0,0,0.55)"
+        stroke="rgba(180,0,30,0.18)"
         strokeWidth={9}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -159,7 +241,7 @@ function SvgOverlay(p: P) {
           <polyline
             points={lookaheadStr}
             fill="none"
-            stroke="rgba(80,255,150,0.28)"
+            stroke="rgba(0,140,70,0.22)"
             strokeWidth={18}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -169,7 +251,7 @@ function SvgOverlay(p: P) {
           <polyline
             points={lookaheadStr}
             fill="none"
-            stroke="#4dff88"
+            stroke="#00a050"
             strokeWidth={3}
             strokeLinecap="round"
             strokeLinejoin="round"

@@ -38,6 +38,8 @@ export type UseSimulationReturn = {
   playSpeed: number;
   setPlaySpeed: (n: number) => void;
   simTimeMs: number;
+  /** Wall-clock ms since page load/reset; drives background streetlight cycling. */
+  cityTimeMs: number;
   progress: number;
   lights: TrafficLightState[];
   comms: CommsMessage[];
@@ -70,6 +72,9 @@ export type UseSimulationReturn = {
 
 type SimRef = {
   simTimeMs: number;
+  /** Wall-clock elapsed ms — always ticks regardless of running/paused state.
+   *  Used for background light cycling so they move even before Start. */
+  cityTimeMs: number;
   progress: number;
   lights: TrafficLightState[];
   completed: boolean;
@@ -89,6 +94,7 @@ export function useSimulation(): UseSimulationReturn {
   const [running, setRunning] = useState(false);
   const [playSpeed, setPlaySpeed] = useState(1);
   const [simTimeMs, setSimTimeMs] = useState(0);
+  const [cityTimeMs, setCityTimeMs] = useState(0);
   const [progress, setProgress] = useState(0);
   const [lights, setLights] = useState<TrafficLightState[]>(() => cloneLights(INITIAL_TRAFFIC_LIGHTS));
   const [comms, setComms] = useState<CommsMessage[]>(initialComms);
@@ -96,6 +102,7 @@ export function useSimulation(): UseSimulationReturn {
 
   const simRef = useRef<SimRef>({
     simTimeMs: 0,
+    cityTimeMs: 0,
     progress: 0,
     lights: cloneLights(INITIAL_TRAFFIC_LIGHTS),
     completed: false,
@@ -156,6 +163,7 @@ export function useSimulation(): UseSimulationReturn {
   const pumpUiFromRef = useCallback(() => {
     const s = simRef.current;
     setSimTimeMs(s.simTimeMs);
+    setCityTimeMs(s.cityTimeMs);
     setProgress(s.progress);
     setLights([...s.lights]);
     setCompleted(s.completed);
@@ -169,8 +177,13 @@ export function useSimulation(): UseSimulationReturn {
       if (s.lastRaf === 0) {
         s.lastRaf = t;
       }
-      const dt = Math.min(80, t - s.lastRaf) * playSpeedRef.current;
+      const rawDt = Math.min(80, t - s.lastRaf);
+      const dt = rawDt * playSpeedRef.current;
       s.lastRaf = t;
+
+      // City clock always ticks at real-world speed so background lights cycle
+      // continuously even before Start is pressed.
+      s.cityTimeMs += rawDt;
 
       if (shouldRun.current && !s.completed) {
         s.simTimeMs += dt;
@@ -180,7 +193,7 @@ export function useSimulation(): UseSimulationReturn {
         // priority yet; passing a huge negative distance keeps every light's
         // `ahead` above the lookahead threshold so no preempt events fire.
         const gatedDist = s.simTimeMs < PLANNING_DELAY_MS ? -1e6 : distA;
-        const { next, events } = advanceTrafficLights(s.lights, s.simTimeMs, gatedDist);
+        const { next, events } = advanceTrafficLights(s.lights, s.simTimeMs, gatedDist, s.cityTimeMs);
         s.lights = next;
         for (const ev of events) {
           const dAhead = ev.type === 'preempt_start' ? ev.distanceAhead : 0;
@@ -201,6 +214,12 @@ export function useSimulation(): UseSimulationReturn {
           setRunning(false);
         }
         pumpUiFromRef();
+      } else {
+        // Even when paused, advance background lights so they keep cycling.
+        const { next } = advanceTrafficLights(s.lights, s.simTimeMs, -1e6, s.cityTimeMs);
+        s.lights = next;
+        setLights([...s.lights]);
+        setCityTimeMs(s.cityTimeMs);
       }
     };
     rafId.current = requestAnimationFrame(tick);
@@ -214,6 +233,7 @@ export function useSimulation(): UseSimulationReturn {
   const reset = useCallback(() => {
     const s = simRef.current;
     s.simTimeMs = 0;
+    s.cityTimeMs = 0;
     s.progress = 0;
     s.lights = cloneLights(INITIAL_TRAFFIC_LIGHTS);
     s.completed = false;
@@ -248,6 +268,7 @@ export function useSimulation(): UseSimulationReturn {
     playSpeed,
     setPlaySpeed,
     simTimeMs,
+    cityTimeMs,
     progress,
     lights,
     comms,

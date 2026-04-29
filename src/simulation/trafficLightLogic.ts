@@ -64,11 +64,16 @@ export type LightSimEvent =
  * For each light, decide mode/phase. Emits at most one start + one end per light
  * per run (caller tracks which lights already had events using sets if needed;
  * we emit when crossing thresholds).
+ *
+ * `cityTimeMs` is a wall-clock-based timer that always advances regardless of
+ * whether the simulation is running. Background lights use it so they cycle
+ * continuously even when the ambulance is paused.
  */
 export function advanceTrafficLights(
   lights: TrafficLightState[],
   simTimeMs: number,
   distanceAmbulanceAlong: number,
+  cityTimeMs = simTimeMs,
 ): { next: TrafficLightState[]; events: LightSimEvent[] } {
   const pathLen = getTotalRouteLength();
   // Guard when route length is 0 (should never happen in this demo).
@@ -78,13 +83,13 @@ export function advanceTrafficLights(
 
   const events: LightSimEvent[] = [];
   const next = lights.map((L) => {
-    // Background: always free cycle, never TSP.
+    // Background: always free cycle at wall-clock speed, never TSP.
     if (!L.onCorridor || L.distanceAlongPath < 0) {
       return {
         ...L,
         mode: 'normal' as const,
         preemptReleaseAt: null,
-        phase: phaseFromFreeCycle(simTimeMs, L.cycleTimeOffset),
+        phase: phaseFromFreeCycle(cityTimeMs, L.cycleTimeOffset),
       };
     }
 
