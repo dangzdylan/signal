@@ -5,7 +5,7 @@
 import { SCENARIO } from './scenario';
 
 const UNIT = () => SCENARIO.unitId;
-const CEN = 'CTRL-7A';
+const CEN = 'EBRICS-Z4';
 
 type Args = {
   lightId: string;

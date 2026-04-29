@@ -1,8 +1,6 @@
 /**
- * Realtime impact strip — the visual proof of slide 11.
- * Shows the live ETA with V2I vs. a no-V2I baseline, the seconds saved so
- * far, and the steady-state % improvement. All numbers come from
- * `useSimulation` so the counter ticks up in lockstep with the ambulance.
+ * Realtime impact strip — the visual proof of V2I benefit.
+ * Shows live ETA with vs. without preemption, seconds saved, and % improvement.
  */
 
 type P = {
@@ -29,7 +27,7 @@ function fmtSec(s: number): string {
 export function ImpactCounter(p: P) {
   const pctFaster = (1 - p.actualTotalSec / p.baselineTotalSec) * 100;
   const idle = !p.running && p.progress === 0;
-  const runLabel = p.completed ? 'TRIP COMPLETE' : idle ? 'AWAITING START' : 'LIVE';
+  const runLabel = p.completed ? 'COMPLETE' : idle ? 'READY' : 'LIVE';
   return (
     <section
       className={`impact-counter ${idle ? 'idle' : ''}`}
@@ -38,21 +36,19 @@ export function ImpactCounter(p: P) {
       <div className="ic-head">
         <div className="ic-title">Realtime V2I Impact</div>
         <div className="ic-sub-title">
-          Baseline source: Fremont pilot ·{' '}
+          Baseline: Fremont pilot ·{' '}
           <span className="ic-hl">{pctFaster.toFixed(0)}% faster</span> projected
         </div>
         <div className={`ic-pill ${p.completed ? 'done' : idle ? '' : 'live'}`}>{runLabel}</div>
       </div>
       <div className="ic-grid">
         <div className="ic-metric hero">
-          <div className="ic-label">Response time saved</div>
+          <div className="ic-label">Time Saved</div>
           <div className="ic-num good">
             {fmtSec(p.timeSavedSec)}
             <span className="ic-trail"> ↑</span>
           </div>
-          <div className="ic-foot">
-            vs. a no-preemption run on the same route
-          </div>
+          <div className="ic-foot">vs. same route without preemption</div>
         </div>
         <div className="ic-metric">
           <div className="ic-label">ETA · With V2I</div>
@@ -65,7 +61,7 @@ export function ImpactCounter(p: P) {
           <div className="ic-foot">no preemption, mixed cycle</div>
         </div>
         <div className="ic-metric">
-          <div className="ic-label">Max Improvement</div>
+          <div className="ic-label">Total Improvement</div>
           <div className="ic-num">{pctFaster.toFixed(0)}%</div>
           <div className="ic-foot">at arrival</div>
         </div>
@@ -88,8 +84,8 @@ export function ImpactCounter(p: P) {
           }}
         />
         <div className="ic-progress-labels">
-          <span className="v2i-mark">● V2I run</span>
-          <span className="base-mark">○ Baseline run (same clock)</span>
+          <span className="v2i-mark">● With V2I</span>
+          <span className="base-mark">○ Baseline (same clock)</span>
         </div>
       </div>
     </section>

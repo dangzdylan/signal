@@ -107,7 +107,7 @@ export default function App() {
       <div className="main-panels">
         <div className={`map-wrap${mapExpanded ? ' map-expanded' : ''}`}>
           <div className="map-caption">
-            Live view · AMB-7 on MLK Jr Way · Berkeley
+            AMB-7 · MLK Jr Way → Ashby Ave · Berkeley, CA
           </div>
           <MapToggleBtn expanded={mapExpanded} onToggle={() => setMapExpanded((v) => !v)} />
           <div className="map-overlay-corners" />
@@ -193,6 +193,7 @@ export default function App() {
       <CommsLog items={sim.comms} />
       <ControlBar
         running={sim.running}
+        progress={sim.progress}
         onStart={sim.start}
         onPause={sim.pause}
         onReset={sim.reset}

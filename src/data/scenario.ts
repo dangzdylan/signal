@@ -4,17 +4,17 @@
 import type { ScenarioInfo } from '../types';
 
 export const SCENARIO: ScenarioInfo = {
-  callId: '911-2026-04-22-0841',
-  patientSummary: 'Unresponsive → responsive; suspected STEMI, priority 1',
+  callId: 'E-2026-0428-0312',
+  patientSummary: 'Unresponsive → responsive; suspected STEMI',
   vitals: { hr: 112, spo2: 95, bp: '148/92' },
-  incidentLabel: '5th & Main (south plaza)',
-  hospitalLabel: 'City General — Emergency (Bay 3)',
-  unitId: 'AMB-042',
-  regionCode: 'METRO-7A',
+  incidentLabel: 'Berkeley Fire Station 2 · 2029 Berkeley Way',
+  hospitalLabel: 'Alta Bates Summit Medical Center · ER Bay',
+  unitId: 'AMB-7',
+  regionCode: 'EBRICS-Z4',
 };
 
-/** Wall-clock "base" to format fake timestamps in the comms log. */
-export const FAKE_EPOCH = new Date('2026-04-22T12:34:00.000Z');
+/** Wall-clock base to format timestamps in the comms log. Matches call date on IncomingCall. */
+export const FAKE_EPOCH = new Date('2026-04-28T08:41:00.000Z');
 
 /**
  * How long a full run from incident to hospital should take at 1.0x speed, seconds.

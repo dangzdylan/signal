@@ -1,9 +1,9 @@
 /**
- * User controls: start, pause, reset, and playback rate. Wires to the
- * `useSimulation` actions so the map and HUD always stay in sync.
+ * Playback controls: resume/pause/reset and speed multiplier.
  */
 type P = {
   running: boolean;
+  progress: number;
   onStart: () => void;
   onPause: () => void;
   onReset: () => void;
@@ -14,11 +14,14 @@ type P = {
 const SPEEDS = [0.5, 1, 2, 4] as const;
 
 export function ControlBar(p: P) {
+  const midRun = p.progress > 0 && p.progress < 1;
+  const startLabel = midRun && !p.running ? 'Resume' : 'Start';
+
   return (
     <div className="control-bar">
       <div className="cb-left">
-        <button type="button" className="btn primary" onClick={p.onStart}>
-          Start
+        <button type="button" className="btn primary" onClick={p.onStart} disabled={p.running}>
+          {startLabel}
         </button>
         <button type="button" className="btn" onClick={p.onPause} disabled={!p.running}>
           Pause
@@ -26,7 +29,6 @@ export function ControlBar(p: P) {
         <button type="button" className="btn" onClick={p.onReset}>
           Reset
         </button>
-        <span className="cb-hint mono">{p.running ? '▶ simulating' : '⏸ paused'}</span>
       </div>
       <div className="cb-right">
         <span className="label">Speed</span>
@@ -37,7 +39,7 @@ export function ControlBar(p: P) {
             className={`btn sm ${p.playSpeed === n ? 'on' : ''}`}
             onClick={() => p.onSpeed(n)}
           >
-            {n}x
+            {n}×
           </button>
         ))}
       </div>

@@ -8,7 +8,7 @@ import type { CommsMessage, CommsSource } from '../types';
 import type { LightSimEvent } from './trafficLightLogic';
 
 /** Matches CEN in messageTemplates; duplicated so we don't export an internal. */
-const CEN_LABEL = 'CTRL-7A';
+const CEN_LABEL = 'EBRICS-Z4';
 
 let msgCounter = 0;
 
@@ -136,7 +136,7 @@ export function makeBootMessage(): CommsMessage {
   return {
     id: nextId(),
     simTimeMs: 0,
-    line: `[BOOT] V2I radio=${SCENARIO.regionCode} link=SEC-TLS-1.3 unit=${SCENARIO.unitId} scenario=hospital_transfer_demo`,
+    line: `[BOOT] V2I link=SEC-TLS-1.3 unit=${SCENARIO.unitId} region=${SCENARIO.regionCode} scenario=hospital_transfer`,
     kind: 'sys' as const,
     source: 'ITSS',
   };
@@ -148,7 +148,7 @@ export function makeRoutePredictedMessage(simTimeMs: number): CommsMessage {
   return {
     id: nextId(),
     simTimeMs,
-    line: `[${iso}] AVL → ${CEN_LABEL}: ROUTE_SOLVED unit=${SCENARIO.unitId} legs=3 corridor=METRO-7A eta_v2i=88s eta_baseline=175s`,
+    line: `[${iso}] AVL → ${CEN_LABEL}: ROUTE_SOLVED unit=${SCENARIO.unitId} legs=3 corridor=MLK-ASHBY eta_v2i=88s eta_baseline=175s`,
     kind: 'dispatch' as const,
     source: 'AVL',
   };

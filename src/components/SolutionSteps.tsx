@@ -14,11 +14,11 @@ type StepDef = {
 };
 
 const STEPS: StepDef[] = [
-  { id: 'dispatch', label: '1 · Dispatch', sub: '911 intake · unit assigned' },
-  { id: 'predicted', label: '2 · Route Predicted', sub: 'AVL solves corridor' },
-  { id: 'corridor', label: '3 · Corridor Active', sub: 'V2I preempts signals' },
-  { id: 'enroute', label: '4 · En Route', sub: 'Green wave sustained' },
-  { id: 'arrived', label: '5 · Arrived', sub: 'Handoff @ ER bay' },
+  { id: 'dispatch', label: 'Dispatch', sub: '911 → unit assigned' },
+  { id: 'predicted', label: 'Route Predicted', sub: 'Corridor computed' },
+  { id: 'corridor', label: 'Corridor Active', sub: 'Signals preempting' },
+  { id: 'enroute', label: 'En Route', sub: 'Green wave held' },
+  { id: 'arrived', label: 'Arrived', sub: 'Handoff at ER bay' },
 ];
 
 export function SolutionSteps(p: P) {
@@ -50,7 +50,7 @@ export function SolutionSteps(p: P) {
               )}
             </div>
             <div className="step-body">
-              <div className="step-label">{s.label.replace(/^\d+\s·\s/, '')}</div>
+              <div className="step-label">{s.label}</div>
               <div className="step-sub">{s.sub}</div>
             </div>
             {i < STEPS.length - 1 ? <div className="step-sep" aria-hidden /> : null}

@@ -1,6 +1,5 @@
 /**
- * The top strip: dispatch / call metadata (100% static except connection badge).
- * Gives context that this is a pre-hospital → hospital transfer with priority.
+ * Top strip: dispatch metadata. Static except for the corridor-status badge.
  */
 import type { ScenarioInfo } from '../types';
 
@@ -10,11 +9,11 @@ export function DispatchPanel(p: P) {
   return (
     <header className="dispatch-panel">
       <div className="dp-row">
-        <div className="dp-brand">METRO-EMERGENCY TSP + V2I</div>
+        <div className="dp-brand">Ambulance V2I Signal Priority</div>
         <div className={`dp-badge ${p.greenCorridor ? 'on' : ''}`}>
-          {p.greenCorridor ? 'PRIORITY CORRIDOR: ACTIVE' : 'PRIORITY CORRIDOR: STANDBY'}
+          {p.greenCorridor ? '● CORRIDOR ACTIVE' : '○ Corridor Standby'}
         </div>
-        <div className="dp-badge light">{p.completed ? 'TRIP: COMPLETE' : 'LIVE: SIMULATION'}</div>
+        <div className="dp-badge light">{p.completed ? '✓ TRIP COMPLETE' : 'LIVE DEMO'}</div>
       </div>
       <div className="dp-grid">
         <div>
@@ -34,7 +33,7 @@ export function DispatchPanel(p: P) {
           <div className="value">{p.scenario.hospitalLabel}</div>
         </div>
         <div className="span-2">
-          <div className="label">Patient (fake)</div>
+          <div className="label">Patient</div>
           <div className="value">{p.scenario.patientSummary}</div>
         </div>
       </div>

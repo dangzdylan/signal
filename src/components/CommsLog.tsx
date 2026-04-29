@@ -44,7 +44,7 @@ export function CommsLog(p: P) {
   return (
     <section className="comms-log" aria-label="V2I communication log">
       <div className="comms-header">
-        <span>Vehicle ↔ Intersection (V2I) + Central · Department attribution</span>
+        <span>V2I Communication Log · Real-time signal preemption messages</span>
         <div className="comms-legend" aria-label="Department legend">
           {SOURCES.map((src) => {
             const meta = SOURCE_META[src];
