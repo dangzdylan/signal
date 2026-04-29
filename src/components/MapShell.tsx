@@ -62,6 +62,10 @@ type P = {
   greenCorridor: boolean;
   /** Always-running wall-clock ms — drives background light cycling. */
   cityTimeMs: number;
+  /** Hide the ambulance sprite (used during the routing-calculation phase). */
+  showAmbulance?: boolean;
+  /** Suppress all SVG overlay content — map tiles still show (incoming-call phase). */
+  hideOverlay?: boolean;
 };
 
 export function MapShell(p: P) {
@@ -114,12 +118,12 @@ export function MapShell(p: P) {
         subdomains="abcd"
         maxZoom={19}
       />
-      <SvgOverlay {...p} streetlights={streetlights} />
+      <SvgOverlay {...p} streetlights={streetlights} hideOverlay={p.hideOverlay} />
     </MapContainer>
   );
 }
 
-type OverlayP = P & { streetlights: Streetlight[] };
+type OverlayP = P & { streetlights: Streetlight[]; hideOverlay?: boolean };
 
 /**
  * Inner component that has access to the Leaflet map via `useMap()`. It
@@ -136,6 +140,9 @@ function SvgOverlay(p: OverlayP) {
   });
 
   const size = map.getSize();
+
+  // During the incoming-call phase show only the bare map tiles.
+  if (p.hideOverlay) return null;
 
   const project = (lng: number, lat: number) => {
     const pt = map.latLngToContainerPoint([lat, lng]);
@@ -278,7 +285,9 @@ function SvgOverlay(p: OverlayP) {
         );
       })}
 
-      <Ambulance x={ambPt.x} y={ambPt.y} rad={p.headingRad} scale={0.9} />
+      {p.showAmbulance !== false && (
+        <Ambulance x={ambPt.x} y={ambPt.y} rad={p.headingRad} scale={0.9} />
+      )}
     </svg>
   );
 }

@@ -36,6 +36,7 @@ body {
 
 /* --- App layout --- */
 .app-shell {
+  position: relative;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -883,4 +884,305 @@ body {
     display: block;
     font-size: 9.5px;
   }
+}
+
+/* --- Incoming call screen --- */
+.ic-screen {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 22, 45, 0.52);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+}
+
+.ic-card {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 580px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  animation: icSlideIn 0.3s ease-out;
+}
+
+@keyframes icSlideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.ic-alert-bar {
+  background: #b91c1c;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.55rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  animation: icAlertPulse 1s ease-in-out infinite;
+}
+
+@keyframes icAlertPulse {
+  0%, 100% { background: #b91c1c; }
+  50% { background: #dc2626; }
+}
+
+.ic-alert-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #fca5a5;
+  animation: icDotPulse 0.8s ease-in-out infinite;
+  flex: none;
+}
+
+@keyframes icDotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+.ic-card-body {
+  padding: 1.1rem 1.25rem 0.6rem;
+}
+
+.ic-section {
+  margin-bottom: 0.7rem;
+}
+
+.ic-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.ic-cell {
+  min-width: 0;
+}
+
+.ic-cell-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6a7a9a;
+  margin-bottom: 0.15rem;
+}
+
+.ic-cell-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a2035;
+  line-height: 1.3;
+}
+
+.ic-cell-red {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+.ic-divider {
+  border: none;
+  border-top: 1px solid rgba(80, 100, 150, 0.14);
+  margin: 0.7rem 0;
+}
+
+.ic-route-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ic-route-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.ic-route-icon {
+  font-size: 14px;
+  width: 22px;
+  text-align: center;
+  flex: none;
+  margin-top: 1px;
+}
+
+.ic-route-icon.origin {
+  color: #0f6cbd;
+}
+
+.ic-route-icon.dest {
+  color: #b91c1c;
+}
+
+.ic-route-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #6a7a9a;
+}
+
+.ic-route-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a2035;
+}
+
+.ic-route-line {
+  width: 2px;
+  height: 14px;
+  background: linear-gradient(to bottom, #0f6cbd, #b91c1c);
+  margin-left: 10px;
+  border-radius: 2px;
+}
+
+.ic-patient-header {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6a7a9a;
+  margin-bottom: 0.4rem;
+}
+
+.ic-patient-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 0.5rem 1rem;
+}
+
+.ic-v2i-note {
+  font-size: 11.5px;
+  color: #0f6cbd;
+  background: #eff5ff;
+  border: 1px solid rgba(15, 108, 189, 0.2);
+  border-radius: 6px;
+  padding: 0.4rem 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.ic-v2i-icon {
+  font-size: 14px;
+  flex: none;
+}
+
+.ic-actions {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.75rem 1.25rem 1rem;
+  border-top: 1px solid rgba(80, 100, 150, 0.14);
+  justify-content: flex-end;
+}
+
+.ic-btn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 7px;
+  padding: 0.5rem 1.2rem;
+  border: 1px solid transparent;
+  transition: background 150ms, box-shadow 150ms;
+}
+
+.ic-btn.ignore {
+  background: #f4f6fb;
+  color: #6a7a9a;
+  border-color: var(--line);
+}
+
+.ic-btn.ignore:hover {
+  background: #e8ecf6;
+}
+
+.ic-btn.accept {
+  background: #0f6cbd;
+  color: #fff;
+  border-color: #0a5aa0;
+  box-shadow: 0 2px 8px rgba(15, 108, 189, 0.35);
+}
+
+.ic-btn.accept:hover {
+  background: #0a5aa0;
+  box-shadow: 0 4px 14px rgba(15, 108, 189, 0.45);
+}
+
+/* --- Route calculation overlay (shown on map after accepting) --- */
+.routing-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(240, 244, 252, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  border-radius: 8px;
+  backdrop-filter: blur(3px);
+}
+
+.routing-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1.4rem 1.8rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  min-width: 280px;
+}
+
+.routing-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(15, 108, 189, 0.2);
+  border-top-color: #0f6cbd;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.routing-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.routing-step {
+  font-size: 12.5px;
+  color: #aab0c0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.25s ease, opacity 0.25s ease;
+  opacity: 0.4;
+}
+
+.routing-step-visible {
+  color: #1a2035;
+  opacity: 1;
+}
+
+.routing-step-done {
+  color: #1a7a40;
+  font-weight: 600;
 }
