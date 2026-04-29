@@ -64,7 +64,7 @@ export function IncomingCall({ onAccept }: P) {
 
           <div className="ic-v2i-note">
             <span className="ic-v2i-icon">📡</span>
-            V2I corridor available on Shattuck Ave · Signal preemption will be requested automatically
+            V2I corridor available on MLK Jr Way · Signal preemption will be requested automatically
           </div>
         </div>
 

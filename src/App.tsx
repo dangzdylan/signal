@@ -19,7 +19,7 @@ type DemoPhase = 'incoming' | 'routing' | 'ready';
 
 const ROUTING_STEPS = [
   'Locating unit AMB-7…',
-  'Linking V2I corridor on Shattuck Ave…',
+  'Linking V2I corridor on MLK Jr Way…',
   'Pre-clearing signal sequence…',
   'Route optimized — ready',
 ];
@@ -75,6 +75,12 @@ export default function App() {
     );
   };
 
+  // Auto-start the simulation as soon as the routing phase finishes.
+  const simStart = sim.start;
+  useEffect(() => {
+    if (phase === 'ready') simStart();
+  }, [phase, simStart]);
+
   // Escape key collapses the map.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -101,7 +107,7 @@ export default function App() {
       <div className="main-panels">
         <div className={`map-wrap${mapExpanded ? ' map-expanded' : ''}`}>
           <div className="map-caption">
-            Live view · Ambulance + predictive corridor · Berkeley
+            Live view · AMB-7 on MLK Jr Way · Berkeley
           </div>
           <MapToggleBtn expanded={mapExpanded} onToggle={() => setMapExpanded((v) => !v)} />
           <div className="map-overlay-corners" />

@@ -1,5 +1,5 @@
 /**
- * Berkeley intersection layout: corridor traffic lights along Shattuck/Ashby
+ * Berkeley intersection layout: corridor traffic lights along MLK Jr Way/Ashby
  * (the active V2I corridor). Coordinates are real-world OSM `traffic_signals`
  * node positions (Point2: x = lng, y = lat). Background city streetlights are
  * fetched live from the City of Berkeley dataset (dz4s-un9u) in MapShell.
@@ -9,15 +9,16 @@ import { ROUTE, getCumulativeAt } from './route';
 
 /**
  * Map view defaults consumed by the Leaflet container.
- * Center is roughly mid-corridor on Shattuck near Bancroft so the entire
- * route fits at default zoom.
+ * Center is mid-route on MLK Jr Way. The route runs from Station 2
+ * (lat 37.873, lng -122.269) → west on Berkeley Way → south on MLK Jr Way
+ * (lng -122.272 to -122.273) → east on Ashby Ave → Alta Bates (lng -122.258).
  */
 export const MAP_VIEW = {
-  center: [37.8640, -122.2660] as [number, number],
+  center: [37.864, -122.265] as [number, number],
   zoom: 15,
   bounds: [
-    [37.8540, -122.2740],
-    [37.8740, -122.2530],
+    [37.852, -122.276],
+    [37.876, -122.255],
   ] as [[number, number], [number, number]],
 };
 
@@ -34,9 +35,9 @@ function phaseAt(timeMs: number, offset: number): LightPhase {
 }
 
 /**
- * Build initial traffic light states: corridor (V2I target) + background
- * (visual only). Corridor lights skip the route's start/end waypoints
- * (fire-station driveway, hospital ER bay) which are not real signals.
+ * Build initial traffic light states for the corridor. Skips waypoints 0 and
+ * 15 (fire-station driveway and hospital ER bay, which are not real signals).
+ * Waypoints 1-14 are real OSM traffic_signals nodes on MLK Jr Way and Ashby Ave.
  */
 function buildInitialLights(): TrafficLightState[] {
   const wps = ROUTE.waypoints;

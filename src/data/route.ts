@@ -11,24 +11,33 @@
 import type { Point2, RouteDefinition } from '../types';
 
 /**
- * Route: Berkeley Fire Station 2 (2029 Berkeley Way) → south on Shattuck →
- * left onto Ashby → Alta Bates Summit Medical Center (2450 Ashby Ave).
+ * Route: Berkeley Fire Station 2 (2029 Berkeley Way) → west on Berkeley Way →
+ * south on MLK Jr Way → east on Ashby Ave → Alta Bates Summit Medical Center.
  *
- * Intersection coordinates are the actual OpenStreetMap `traffic_signals`
- * node positions for each junction (queried from Overpass), so the in-app
- * markers line up precisely with the road geometry on the basemap.
+ * All intersection coordinates are real OSM traffic_signals node positions
+ * queried from Overpass API — the ambulance sprite follows actual road
+ * geometry on the CartoDB basemap.
+ *
+ * MLK Jr Way runs at approximately lng -122.272 to -122.273 (not -122.270),
+ * drifting slightly eastward as it goes south toward Ashby.
  */
 const WAYPOINTS: Point2[] = [
-  { x: -122.2706, y: 37.8721 }, //  0 Station 2 driveway (Berkeley Way)
-  { x: -122.2678, y: 37.8722 }, //  1 Shattuck Ave & Berkeley Way — turn south
-  { x: -122.2677, y: 37.8712 }, //  2 Shattuck Ave & University Ave
-  { x: -122.2678, y: 37.8704 }, //  3 Shattuck Ave & Center St
-  { x: -122.2678, y: 37.8685 }, //  4 Shattuck Ave & Bancroft Way
-  { x: -122.2674, y: 37.8649 }, //  5 Shattuck Ave & Dwight Way
-  { x: -122.2665, y: 37.8553 }, //  6 Shattuck Ave & Ashby Ave — turn east
-  { x: -122.2635, y: 37.8557 }, //  7 Ashby Ave & Adeline St
-  { x: -122.2598, y: 37.8552 }, //  8 Ashby Ave & Telegraph Ave
-  { x: -122.2545, y: 37.8556 }, //  9 Alta Bates Summit ER bay
+  { x: -122.269343, y: 37.873148 }, //  0 Station 2 driveway (2029 Berkeley Way)
+  { x: -122.273116, y: 37.872459 }, //  1 Berkeley Way & MLK Jr Way — turn south
+  { x: -122.273015, y: 37.871563 }, //  2 MLK Jr Way & University Ave
+  { x: -122.272817, y: 37.869698 }, //  3 MLK Jr Way & Center St
+  { x: -122.272714, y: 37.868793 }, //  4 MLK Jr Way & Allston Way
+  { x: -122.272516, y: 37.866990 }, //  5 MLK Jr Way & Bancroft Way
+  { x: -122.272315, y: 37.865176 }, //  6 MLK Jr Way & Channing Way
+  { x: -122.272073, y: 37.863365 }, //  7 MLK Jr Way & Dwight Way
+  { x: -122.271703, y: 37.859752 }, //  8 MLK Jr Way & Derby St
+  { x: -122.271301, y: 37.856132 }, //  9 MLK Jr Way & Russell St
+  { x: -122.271091, y: 37.854282 }, // 10 MLK Jr Way & Ashby Ave — turn east
+  { x: -122.269066, y: 37.854512 }, // 11 Ashby Ave & Adeline St
+  { x: -122.266514, y: 37.855296 }, // 12 Ashby Ave & Shattuck Ave
+  { x: -122.263507, y: 37.855685 }, // 13 Ashby Ave & Fulton St
+  { x: -122.259837, y: 37.855192 }, // 14 Ashby Ave & Telegraph Ave
+  { x: -122.257652, y: 37.855458 }, // 15 Alta Bates Summit Medical Center ER bay
 ];
 
 /** Earth radius (m) for Haversine. */
@@ -186,32 +195,38 @@ export function getNextManeuver(
   p: number,
 ): { nextManeuver: string; distanceAlongRemaining: number } {
   const d = p * TOTAL_LENGTH;
-  // WAYPOINTS index 1 = Shattuck Ave & Berkeley Way (turn south)
-  // index 6 = Shattuck Ave & Ashby Ave (turn east)
-  // index 9 = Alta Bates ER bay
+  // WAYPOINTS index 1 = Berkeley Way & MLK Jr Way (turn south)
+  // index 10 = MLK Jr Way & Ashby Ave (turn east)
+  // index 15 = Alta Bates ER bay
   for (let i = 1; i < CUMULATIVE.length; i += 1) {
     if (CUMULATIVE[i]! > d + 0.5) {
       const dist = CUMULATIVE[i]! - d;
       if (i === 1) {
         return {
-          nextManeuver: 'EXIT Station 2 — onto Shattuck Ave (priority corridor)',
+          nextManeuver: 'EXIT Station 2 — west on Berkeley Way',
           distanceAlongRemaining: dist,
         };
       }
-      if (i <= 5) {
+      if (i === 2) {
         return {
-          nextManeuver: 'CONTINUE SOUTH on Shattuck — priority corridor',
+          nextManeuver: 'TURN SOUTH onto MLK Jr Way (priority corridor)',
           distanceAlongRemaining: dist,
         };
       }
-      if (i === 6) {
+      if (i <= 10) {
         return {
-          nextManeuver: 'TURN LEFT onto Ashby Ave — follow green wave',
+          nextManeuver: 'CONTINUE SOUTH on MLK Jr Way — priority corridor',
+          distanceAlongRemaining: dist,
+        };
+      }
+      if (i === 11) {
+        return {
+          nextManeuver: 'TURN EAST onto Ashby Ave — follow green wave',
           distanceAlongRemaining: dist,
         };
       }
       return {
-        nextManeuver: 'CONTINUE EAST to Alta Bates (ER bay)',
+        nextManeuver: 'CONTINUE EAST on Ashby to Alta Bates (ER bay)',
         distanceAlongRemaining: dist,
       };
     }

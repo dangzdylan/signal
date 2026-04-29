@@ -294,6 +294,33 @@ function SvgOverlay(p: OverlayP) {
         );
       })}
 
+      {/* Destination marker — Alta Bates Summit ER */}
+      {(() => {
+        const dest = ROUTE.waypoints[ROUTE.waypoints.length - 1]!;
+        const dpt = project(dest.x, dest.y);
+        return (
+          <g
+            transform={`translate(${dpt.x.toFixed(1)},${dpt.y.toFixed(1)})`}
+            aria-label="Alta Bates Summit ER — destination"
+          >
+            <circle r={22} fill="none" stroke="#c0001a" strokeWidth={1.2} className="dest-ring" />
+            <circle r={13} fill="rgba(255,255,255,0.92)" stroke="#c0001a" strokeWidth={1.8} />
+            <path d="M0,-5.5 L0,5.5 M-5.5,0 L5.5,0" stroke="#c0001a" strokeWidth={2.5} strokeLinecap="round" />
+            <text
+              y={30}
+              textAnchor="middle"
+              fontSize={9}
+              fontWeight="700"
+              fill="#c0001a"
+              fontFamily="system-ui,sans-serif"
+              style={{ pointerEvents: 'none' }}
+            >
+              Alta Bates ER
+            </text>
+          </g>
+        );
+      })()}
+
       {p.showAmbulance !== false && (
         <Ambulance x={ambPt.x} y={ambPt.y} rad={p.headingRad} scale={0.9} />
       )}

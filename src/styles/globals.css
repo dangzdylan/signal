@@ -937,6 +937,24 @@ body {
   }
 }
 
+@keyframes destRingPulse {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.2);
+  }
+}
+
+.dest-ring {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: destRingPulse 2s ease-in-out infinite;
+}
+
 @media (max-width: 1000px) {
   .main-panels {
     grid-template-columns: 1fr;
