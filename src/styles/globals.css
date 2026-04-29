@@ -797,7 +797,7 @@ body {
 
 .ic-grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 0.8fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 0.55rem;
 }
 
@@ -809,9 +809,9 @@ body {
   min-width: 0;
 }
 
-.ic-metric.hero {
-  background: #eef8f3;
-  border-color: rgba(26, 122, 64, 0.3);
+.ic-metric.primary {
+  background: #eff5ff;
+  border-color: rgba(15, 108, 189, 0.3);
 }
 
 .ic-label {
@@ -830,8 +830,8 @@ body {
   line-height: 1.05;
 }
 
-.ic-metric.hero .ic-num {
-  font-size: 2rem;
+.ic-num.primary {
+  color: var(--accent);
 }
 
 .ic-num.good {
@@ -842,9 +842,16 @@ body {
   color: #c96000;
 }
 
+.ic-unit {
+  font-size: 0.7em;
+  font-weight: 500;
+  margin-left: 0.05rem;
+  color: #4a5568;
+}
+
 .ic-trail {
   font-size: 0.55em;
-  color: #1a7a40;
+  color: #6a7a9a;
   font-weight: 500;
   margin-left: 0.15rem;
 }
@@ -903,6 +910,36 @@ body {
 
 .base-mark {
   color: #c96000;
+}
+
+.ic-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(1px);
+  border-radius: 8px;
+  z-index: 10;
+}
+
+.ic-loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(15, 108, 189, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.ic-loading-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4a5568;
+  letter-spacing: 0.04em;
 }
 
 /* --- Lookahead corridor overlay (slide 6) --- */
@@ -979,11 +1016,7 @@ body {
   }
 
   .ic-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .ic-metric.hero {
-    grid-column: span 2;
+    grid-template-columns: 1fr 1fr 1fr;
   }
 }
 

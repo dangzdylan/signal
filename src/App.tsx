@@ -181,6 +181,7 @@ export default function App() {
         />
       </div>
       <ImpactCounter
+        phase={phase}
         timeSavedSec={sim.timeSavedSec}
         actualEtaSec={sim.actualEtaSec}
         baselineEtaSec={sim.baselineEtaSec}
